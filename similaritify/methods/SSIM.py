@@ -1,52 +1,21 @@
-from skimage.metrics import structural_similarity
 import cv2
 import numpy as np
+from skimage.metrics import structural_similarity as ssim
 
 
 
 class SSIM:
-    def __init__(self, target_width, resize_images):
-        self.target_width = target_width
-        self.resize_images = resize_images
+    def __init__(self, multi_channel=True, win_size=None):
+        self.multi_channel = multi_channel
+        self.win_size = win_size
 
-    def load_images(self, img1_path, img2_path):
-        img1 = cv2.imread(img1_path)
-        img2 = cv2.imread(img2_path)
+    def compare(self, img1, img2):
+        if not self.multi_channel:
+            img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
+            img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
 
-        if img1 is None:
-            raise FileNotFoundError(f"Cannot open/read file \"{img1_path}\". Please check if file path is correct.")
-        if img2 is None:
-            raise FileNotFoundError(f"Cannot open/read file \"{img2_path}\". Please check if file path is correct.")
+        # When multichannel is True, ensure the channel axis is correctly specified (depends on grayscale image or rgb)
+        channel_axis = -1 if self.multi_channel else None
 
-        #self.print_debug("Loaded images", self.start_time)
-
-        return img1, img2
-
-    def resize(self, img1, img2):
-        # Calculate target height to maintain 16:9 aspect ratio
-        target_height = int(self.target_width * 9 / 16)
-
-        # Resize images to 1280x720 while maintaining aspect ratio
-        img1 = cv2.resize(img1, (self.target_width, target_height))
-        img2 = cv2.resize(img2, (self.target_width, target_height))
-
-       # self.print_debug(f"Resized img1 to {img1.shape[1]}x{img1.shape[0]} and img2 to {img2.shape[1]}x{img2.shape[0]}", self.start_time)
-
-        return img1, img2
-
-
-    def compare(self, img1_path, img2_path):
-
-        img1, img2 = self.load_images(img1_path, img2_path)
-
-        if self.resize_images:
-            img1, img2 = self.resize(img1, img2)
-
-        # Convert images to grayscale
-        img1_gs = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
-        img2_gs = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
-
-        # Compute SSIM between two images
-        (score, diff) = structural_similarity(img1_gs, img2_gs, full=True)
-        
-        return score*100
+        mssim, _ = ssim(img1, img2, multichannel=self.multi_channel, full=True, win_size=self.win_size, channel_axis=channel_axis)
+        return mssim
