@@ -1,33 +1,23 @@
+import sys
+import os
+
+sys.path.append(os.path.join("similaritify", "methods"))
+
 import cv2
 import numpy as np
+import utils as ut
+
+
 class ORB:
-    def initialize_orb(self, num_features=500):
-        """ Initialize ORB detector. """
+    def compare(self, img1, img2, num_features=500):
         orb = cv2.ORB_create(nfeatures=num_features)
-        return orb
+        matcher = ut.create_matcher(norm_type=cv2.NORM_HAMMING, cross_check=True)
+        kps1, descs1 = ut.find_keypoints_and_descriptors(detector=orb, image=img1)
+        kps2, descs2 = ut.find_keypoints_and_descriptors(detector=orb, image=img2)
+        
+        if any(v is None for v in [descs1, descs2, kps1, kps2]):
+            return None
+        
+        matches = ut.default_match_descriptors(matcher, descs1, descs2, need_sort=True)
 
-    def find_keypoints_and_descriptors(self, orb, image):
-        """ Find keypoints and descriptors with ORB. """
-        keypoints, descriptors = orb.detectAndCompute(image, None)
-        return keypoints, descriptors
-
-    def match_descriptors(self, descriptors1, descriptors2):
-        """ Match descriptors using a brute force matcher. """
-        matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-        matches = matcher.match(descriptors1, descriptors2)
-        matches = sorted(matches, key=lambda x: x.distance)
-        return matches
-
-    def calculate_match_percentage(self, matches, keypoints1):
-        """ Calculate the match percentage. """
-        if not keypoints1:
-            return 0
-        match_percentage = (len(matches) / len(keypoints1))
-        return match_percentage
-
-    def compare(self, img1, img2):
-        orb = self.initialize_orb()
-        keypoints1, descriptors1 = self.find_keypoints_and_descriptors(orb, img1)
-        keypoints2, descriptors2 = self.find_keypoints_and_descriptors(orb, img2)
-        matches = self.match_descriptors(descriptors1, descriptors2)
-        return self.calculate_match_percentage(matches, keypoints1)
+        return ut.calculate_match_percentage(matches, kps1)
