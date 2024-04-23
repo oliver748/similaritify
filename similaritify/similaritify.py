@@ -8,6 +8,8 @@ sys.path.append('similaritify')
 from methods.AKAZE import AKAZE
 from methods.SSIM import SSIM
 from methods.ORB import ORB
+from methods.PSNR import PSNR
+from methods.BRISK import BRISK
 
 import cv2
 import math
@@ -70,7 +72,16 @@ class Similaritify:
                 orb = ORB()
                 result = orb.compare(img1, img2)
                 results_dic["ORB"] = result
-                
+
+            if method.lower() == "psnr":
+                psnr = PSNR()
+                result = psnr.compare(img1, img2)
+                results_dic["PSNR"] = result
         
 
+            if method.lower() == "brisk":
+                brisk = BRISK()
+                result = brisk.compare(img1, img2)
+                results_dic["BRISK"] = result
+        
         return results_dic
